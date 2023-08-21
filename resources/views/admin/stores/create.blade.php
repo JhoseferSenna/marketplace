@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('content')
-<form action="{{route('admin.stores.store')}}" method="post">
+<form action="{{route('admin.stores.store')}}" method="post" enctype="multipart/form-data">
   <input type="hidden" name="_token" value="{{csrf_token()}}">
 <div class="from-group">
   <label for="">Nome Loja</label>
@@ -32,16 +32,24 @@
 <div class="from-group">
   <label for="">Celular</label>
     <input class="form-control @error('mobile_phone') is-invalid @enderror" value="{{old('mobile_phone')}}" type="text" name="mobile_phone">
-        @error('mobile_phone')
+    @error('mobile_phone')
     <div class="invalid-feedback">
       {{$message}}
     </div>
     @enderror
   </div>
-<div class="from-group">
-  <label for="">Slug</label>
-    <input class="form-control" type="text" name="slug">
-  </div>
+
+<div class="form-group">
+    <label for="">Fotos do Produto</label>
+    <input type="file" name="logo" class="form-control @error('logo') is-invalid @enderror" multiple>
+    @error('logo')
+    <div class="invalid-feedback">
+      {{$message}}
+    </div>
+    @enderror
+</div>
+
+
 
     <div>
       <button class="btn btn-success my-2" type="submit" >Criar Loja</button>

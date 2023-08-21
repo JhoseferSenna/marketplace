@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Product;
 use App\Http\Requests\ProductRequest;
+use App\Traits\UploadTrait;
 class ProductController extends Controller
 {
+    use UploadTrait;
+    private $product;
     public function __construct(Product $product)
     {
         $this->product = $product;
@@ -20,7 +23,12 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = $this->product->paginate(10);
+        $user = auth()->user();
+        if(!$user->store->exists()){
+            flash('É preciso criar uma loja para cadastrar produtos!')->warning();
+            return redirect()->route('admin.stores.index');
+        }
+        $products = $user->store->products()->paginate(10);
         return view('admin.products.index', compact('products'));
     }
 
@@ -44,9 +52,17 @@ class ProductController extends Controller
     public function store(ProductRequest $request)
     {
         $data = $request->all();
+        $categories = $request->get('categories', null);
         $store = auth()->user()->store;
         $product = $store->products()->create($data);
-        $product->categories()->sync($data['categories']);
+        $product->categories()->sync($categories);
+
+        if($request->hasFile('photos')){
+            $images = $this->imageUpload($request->file('photos'), 'image');
+            //inserção das imagens/referencia na base de dados
+            $product->photos()->createMany($images);
+        }
+
         flash('Produto Criado com Sucesso')->success();
         return redirect()->route('admin.products.index');
     }
@@ -85,8 +101,17 @@ class ProductController extends Controller
     public function update(ProductRequest $request, $product)
     {
         $data = $request->all();
+        $categories = $request->get('categories', null);
         $product = $this->product->find($product);
         $product->update($data);
+        if(!is_null ($categories)){
+        $product->categories()->sync($categories);
+        }
+        if($request->hasFile('photos')){
+            $images = $this->imageUpload($request->file('photos'), 'image');
+            //inserção das imagens/referencia na base de dados
+            $product->photos()->createMany($images);
+        }
         flash('Produto Edtitado com Sucesso')->success();
         return redirect()->route('admin.products.index');
     }
@@ -104,4 +129,6 @@ class ProductController extends Controller
         flash('Produto Excluido com Sucesso')->success();
         return redirect()->route('admin.products.index');
     }
+
+
 }
